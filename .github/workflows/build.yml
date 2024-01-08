@@ -1,0 +1,46 @@
+name: Fetch Update and Publish Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "4 5 * * *"
+
+jobs:
+  fetch-and-release:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4.1.1
+
+      - name: Build If Needed
+        run: |
+            ./Script/update.sh
+            ./Script/test.sh
+
+            if [ -f "tag.txt" ]; then
+              echo UPDATE_NEEDED=true >> $GITHUB_ENV
+            else
+              echo UPDATE_NEEDED=false >> $GITHUB_ENV
+              exit 0
+            fi
+
+            echo "RELEASE_TAG=$(cat tag.txt)" >> $GITHUB_ENV
+
+      - name: Commit & Push changes
+        uses: actions-js/push@master
+        if: env.UPDATE_NEEDED == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Make Release
+        if: env.UPDATE_NEEDED == 'true'
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          body: |
+            # Package
+            This release was made by automation.
+          draft: false
+          prerelease: false
+
+
