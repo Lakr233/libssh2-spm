@@ -3,7 +3,6 @@ import XCTest
 
 class MyTest: XCTestCase {
     func testExample() {
-        XCTAssert(libssh2_init(0) == 0);
-        libssh2_exit();
+        XCTAssert(libssh2_init(0) == 0)
     }
 }

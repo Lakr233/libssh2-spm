@@ -29,7 +29,7 @@ let package = Package(
                 .define("HAVE_LIBZ"),
                 .define("LIBSSH2_HAVE_ZLIB"),
                 .define("LIBSSH2_OPENSSL"),
-                
+
                 .define("STDC_HEADERS"),
                 .define("HAVE_ALLOCA"),
                 .define("HAVE_ALLOCA_H"),
