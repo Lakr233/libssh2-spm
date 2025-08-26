@@ -24,7 +24,6 @@ let package = Package(
                 .product(name: "OpenSSL", package: "openssl-spm"),
             ],
             cSettings: [
-                .unsafeFlags(["-w"]),
                 .define("HAVE_LIBSSL"),
                 .define("HAVE_LIBZ"),
                 .define("LIBSSH2_HAVE_ZLIB"),
