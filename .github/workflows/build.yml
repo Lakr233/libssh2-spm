@@ -1,46 +1,80 @@
-name: Fetch Update and Publish Release
+name: Release
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "Vendor/libssh2"
   workflow_dispatch:
-  schedule:
-    - cron: "4 5 * * *"
+    inputs:
+      force_release:
+        description: "Force create a release even if no submodule changes"
+        required: false
+        default: "false"
+        type: boolean
+
+permissions:
+  contents: write
 
 jobs:
-  fetch-and-release:
-    runs-on: macos-14
+  release:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4.1.1
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
 
-      - name: Build If Needed
+      - name: Get libssh2 Version
+        id: version
         run: |
-            ./Script/update.sh
-            ./Script/test.sh
+          cd Vendor/libssh2
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || git rev-parse --short HEAD)
+          # Extract version number (e.g., libssh2-1.11.1 -> 1.11.1)
+          VERSION_NUM=$(echo "$VERSION" | sed 's/^libssh2-//')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_num=$VERSION_NUM" >> $GITHUB_OUTPUT
+          echo "Detected libssh2 version: $VERSION ($VERSION_NUM)"
 
-            if [ -f "tag.txt" ]; then
-              echo UPDATE_NEEDED=true >> $GITHUB_ENV
-            else
-              echo UPDATE_NEEDED=false >> $GITHUB_ENV
-              exit 0
-            fi
+      - name: Check if Release Exists
+        id: check_release
+        run: |
+          RELEASE_TAG="${{ steps.version.outputs.version_num }}"
+          if gh release view "$RELEASE_TAG" &>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release $RELEASE_TAG already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release $RELEASE_TAG does not exist"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            echo "RELEASE_TAG=$(cat tag.txt)" >> $GITHUB_ENV
-
-      - name: Commit & Push changes
-        uses: actions-js/push@master
-        if: env.UPDATE_NEEDED == 'true'
+      - name: Create Release
+        if: steps.check_release.outputs.exists == 'false' || inputs.force_release == 'true'
+        uses: softprops/action-gh-release@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Make Release
-        if: env.UPDATE_NEEDED == 'true'
-        uses: softprops/action-gh-release@v0.1.15
-        with:
-          tag_name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ steps.version.outputs.version_num }}
+          name: "v${{ steps.version.outputs.version_num }}"
           body: |
-            # Package
-            This release was made by automation.
+            ## CSSH2 Release
+
+            This release wraps **libssh2 ${{ steps.version.outputs.version }}**.
+
+            ### Changes
+            See [libssh2 releases](https://github.com/libssh2/libssh2/releases/tag/${{ steps.version.outputs.version }}) for upstream changelog.
+
+            ### Installation
+
+            Add to your `Package.swift`:
+            ```swift
+            dependencies: [
+                .package(url: "https://github.com/Lakr233/libssh2-spm.git", from: "${{ steps.version.outputs.version_num }}")
+            ]
+            ```
+
+            ---
+            *This release was automatically created.*
           draft: false
           prerelease: false
-
-

@@ -1,0 +1,88 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Resolve Dependencies
+        run: xcodebuild -resolvePackageDependencies -scheme CSSH2
+
+      - name: Build for macOS
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=macOS" | xcbeautify
+
+      - name: Build for Mac Catalyst
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=macOS,variant=Mac Catalyst" | xcbeautify
+
+      - name: Build for iOS
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=iOS" | xcbeautify
+
+      - name: Build for iOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=iOS Simulator" | xcbeautify
+
+      - name: Build for tvOS
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=tvOS" | xcbeautify
+
+      - name: Build for tvOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=tvOS Simulator" | xcbeautify
+
+      - name: Build for watchOS
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=watchOS" | xcbeautify
+
+      - name: Build for watchOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=watchOS Simulator" | xcbeautify
+
+      - name: Build for visionOS
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=xrOS" | xcbeautify
+
+      - name: Build for visionOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild -scheme CSSH2 -destination "generic/platform=xrOS Simulator" | xcbeautify
+
+      - name: Run Tests on macOS
+        run: |
+          set -o pipefail
+          xcodebuild test -scheme CSSH2 -destination "platform=macOS" | xcbeautify

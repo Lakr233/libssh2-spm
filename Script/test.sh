@@ -6,27 +6,27 @@ cd ..
 SCEHEME="CSSH2"
 
 function test_build() {
-    DESTINATION=$1
-    echo "[*] test build for $DESTINATION"
-    xcodebuild -scheme $SCEHEME -destination "$DESTINATION" | xcbeautify
-    EXIT_CODE=${PIPESTATUS[0]}
-    echo "[*] finished with exit code $EXIT_CODE"
-    if [ $EXIT_CODE -ne 0 ]; then
-        echo "[!] failed to build for $DESTINATION"
-        exit 1
-    fi
+	DESTINATION=$1
+	echo "[*] test build for $DESTINATION"
+	xcodebuild -scheme $SCEHEME -destination "$DESTINATION" | xcbeautify
+	EXIT_CODE=${PIPESTATUS[0]}
+	echo "[*] finished with exit code $EXIT_CODE"
+	if [ $EXIT_CODE -ne 0 ]; then
+		echo "[!] failed to build for $DESTINATION"
+		exit 1
+	fi
 }
 
 function test_test() {
-    DESTINATION=$1
-    echo "[*] execute test for $DESTINATION"
-    xcodebuild test -scheme $SCEHEME -destination "$DESTINATION" | xcbeautify
-    EXIT_CODE=${PIPESTATUS[0]}
-    echo "[*] finished with exit code $EXIT_CODE"
-    if [ $EXIT_CODE -ne 0 ]; then
-        echo "[!] failed to build for $DESTINATION"
-        exit 1
-    fi
+	DESTINATION=$1
+	echo "[*] execute test for $DESTINATION"
+	xcodebuild test -scheme $SCEHEME -destination "$DESTINATION" | xcbeautify
+	EXIT_CODE=${PIPESTATUS[0]}
+	echo "[*] finished with exit code $EXIT_CODE"
+	if [ $EXIT_CODE -ne 0 ]; then
+		echo "[!] failed to build for $DESTINATION"
+		exit 1
+	fi
 }
 
 # to reset all cache

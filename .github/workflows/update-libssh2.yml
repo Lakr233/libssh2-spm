@@ -1,0 +1,97 @@
+name: Update libssh2
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 6:00 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-update:
+    runs-on: ubuntu-latest
+    outputs:
+      has_update: ${{ steps.check.outputs.has_update }}
+      current_version: ${{ steps.check.outputs.current_version }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Check for libssh2 Updates
+        id: check
+        run: |
+          cd Vendor/libssh2
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 2>/dev/null || git rev-parse --short HEAD)
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          git fetch --tags origin
+          LATEST_VERSION=$(git tag -l 'libssh2-*' | sort -V | tail -1)
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "has_update=true" >> $GITHUB_OUTPUT
+            echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
+          else
+            echo "has_update=false" >> $GITHUB_OUTPUT
+            echo "Already up to date: $CURRENT_VERSION"
+          fi
+
+  create-pr:
+    needs: check-update
+    if: needs.check-update.outputs.has_update == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update libssh2 Submodule
+        run: |
+          cd Vendor/libssh2
+          git fetch --tags origin
+          git checkout ${{ needs.check-update.outputs.latest_version }}
+          cd ../..
+          git add Vendor/libssh2
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update libssh2 to ${{ needs.check-update.outputs.latest_version }}"
+          title: "Update libssh2 from ${{ needs.check-update.outputs.current_version }} to ${{ needs.check-update.outputs.latest_version }}"
+          body: |
+            ## Automated libssh2 Update
+
+            This PR updates the libssh2 submodule to the latest release.
+
+            | Field | Value |
+            |-------|-------|
+            | **Current Version** | `${{ needs.check-update.outputs.current_version }}` |
+            | **New Version** | `${{ needs.check-update.outputs.latest_version }}` |
+
+            ### Changes
+            See [libssh2 releases](https://github.com/libssh2/libssh2/releases/tag/${{ needs.check-update.outputs.latest_version }}) for changelog.
+
+            ### Checklist
+            - [ ] All platform builds pass
+            - [ ] Tests pass on macOS
+
+            ---
+            *This PR was automatically created by the update-libssh2 workflow.*
+          branch: update-libssh2-${{ needs.check-update.outputs.latest_version }}
+          delete-branch: true
+          labels: |
+            dependencies
+            automated
