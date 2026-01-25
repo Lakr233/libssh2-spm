@@ -23,6 +23,16 @@ let package = Package(
             dependencies: [
                 .product(name: "OpenSSL", package: "openssl-spm"),
             ],
+            path: "Vendor/libssh2",
+            exclude: [
+                "src/CMakeLists.txt",
+                "src/Makefile.am",
+                "src/Makefile.inc",
+                "src/libssh2.rc",
+                "src/libssh2_config_cmake.h.in",
+            ],
+            sources: ["src"],
+            publicHeadersPath: "include",
             cSettings: [
                 // Crypto backend
                 .define("HAVE_LIBSSL"),
