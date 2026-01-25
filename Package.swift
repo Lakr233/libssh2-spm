@@ -15,7 +15,7 @@ let package = Package(
         .library(name: "CSSH2", targets: ["CSSH2"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/Lakr233/openssl-spm.git", from: "3.5.0"),
+        .package(url: "https://github.com/Lakr233/openssl-spm.git", from: "3.6.0"),
     ],
     targets: [
         .target(

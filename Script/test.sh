@@ -45,5 +45,7 @@ test_build "generic/platform=tvOS"
 test_build "generic/platform=tvOS Simulator"
 test_build "generic/platform=watchOS"
 test_build "generic/platform=watchOS Simulator"
+test_build "generic/platform=xrOS"
+test_build "generic/platform=xrOS Simulator"
 
 test_test "platform=macOS"
